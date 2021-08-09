@@ -77,6 +77,12 @@ class CellManager(object):
             v.append("\n")
         return "".join(v)
 
+    def get_cell_randomly(self):
+        row_index = random.choice(range(len(self.rows)))
+        row = self.rows[row_index]
+        cell_index = random.choice(range(len(row)))
+        return row[cell_index]
+
     def _get_cell(self, y, x):
         if y < 0 or x < 0:
             return None
@@ -108,25 +114,35 @@ def main(cell_count):
     curr_speed = 0.5
     speed_step = 0.1
 
+    counter = 0
+
     while True:
 
         curr_str = manager.get_cells_string()
         stdscr.addstr(0, 0, curr_str)
         stdscr.refresh()
+        print(counter)
 
-        # カーソル上を押すと早くなる
-        # カーソル下を押すと遅くなる
         c = stdscr.getch()
+        # カーソル上を押すと早くなる
         if c == curses.KEY_UP and curr_speed > max_speed:
             curr_speed -= speed_step
+        # カーソル下を押すと遅くなる
         elif c == curses.KEY_DOWN and curr_speed < min_speed:
             curr_speed += speed_step
+        # press `q`
         elif c == 113:
-            sys.exit(0)
+            break
+        # press `r`
+        elif c == 114:
+            cell = manager.get_cell_randomly()
+            cell.is_alive = not cell.is_alive
         time.sleep(curr_speed)
 
         manager.next()
         manager.live()
+
+        counter += 1
 
         if curr_str == prev_str:
             break
