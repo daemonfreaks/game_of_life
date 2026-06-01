@@ -3,7 +3,6 @@
 from __future__ import print_function
 import curses
 import random
-import sys
 import time
 
 
@@ -85,7 +84,7 @@ class Universe(object):
             return None
         try:
             return self.rows[y][x]
-        except:
+        except IndexError:
             return None
 
 
