@@ -31,7 +31,7 @@ jobs:
       run: ruff check ${{ env.target_module }}
 
     - name: Type check with mype
-      run: mypy ${{ matrix.python-version }}
+      run: mypy ${{ env.target_module }}
 
     - name: Run tests with pytest
-      run: pytest ${{ matrix.python-version }}
+      run: pytest test_${{ env.target_module }}
