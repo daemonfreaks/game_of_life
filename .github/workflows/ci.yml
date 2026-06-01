@@ -34,4 +34,4 @@ jobs:
       run: mypy ${{ env.target_module }}
 
     - name: Run tests with pytest
-      run: pytest ${{ env.target_module }}
+      run: pytest test_${{ env.target_module }}
