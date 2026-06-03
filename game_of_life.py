@@ -53,13 +53,14 @@ class Universe(object):
                     alive_cell_count += 1
         return alive_cell_count
 
-    def next(self):
+    def step(self):
+        """世代を1ステップ進める。
+        """
         for y, row in enumerate(self.rows):
             for x, cell in enumerate(row):
                 count_neighbors = self.get_count_of_around_alive_cell(y, x)
                 cell.compute_next_state(count_neighbors)
 
-    def live(self):
         for row in self.rows:
             for cell in row:
                 cell.apply_next_state()
@@ -135,9 +136,7 @@ def main(cell_count):
             cell.is_alive = not cell.is_alive
         time.sleep(curr_speed)
 
-        universe.next()
-        universe.live()
-
+        universe.step()
         counter += 1
 
         if curr_str == prev_str:
