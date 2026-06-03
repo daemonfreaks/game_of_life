@@ -6,6 +6,7 @@ on:
 
 env:
   target_module: game_of_life.py
+  test_module: test_mame_of_life.py
 
 jobs:
   test-build-deploy:
@@ -28,10 +29,10 @@ jobs:
         pip install -r requirements.txt
 
     - name: Lint with Ruff
-      run: ruff check ${{ env.target_module }}
+      run: ruff check *py
 
     - name: Type check with mype
-      run: mypy ${{ env.target_module }}
+      run: mypy *py
 
     - name: Run tests with pytest
       run: pytest test_${{ env.target_module }}
