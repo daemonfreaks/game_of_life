@@ -108,56 +108,60 @@ def main(count):
     universe = Universe()
     universe.build_grid(count)
 
-    stdscr = curses.initscr()
-    curses.noecho()
-    curses.cbreak()
-    stdscr.keypad(1)
-    stdscr.nodelay(1)
-    prev_str = ""
+    stdscr = None
+    try:
+        stdscr = curses.initscr()
+        curses.noecho()
+        curses.cbreak()
+        stdscr.keypad(1)
+        stdscr.nodelay(1)
+        prev_str = ""
 
-    min_speed = 1.0
-    max_speed = 0.1
-    curr_speed = 0.5
-    speed_step = 0.1
+        min_speed = 1.0
+        max_speed = 0.1
+        curr_speed = 0.5
+        speed_step = 0.1
 
-    counter = 0
+        counter = 0
 
-    while True:
+        while True:
 
-        curr_str = universe.get_cells_string()
-        stdscr.addstr(0, 0, curr_str)
-        stdscr.refresh()
-        print(counter)
+            curr_str = universe.get_cells_string()
+            stdscr.addstr(0, 0, curr_str)
+            stdscr.refresh()
+            print(counter)
 
-        c = stdscr.getch()
-        # カーソル上を押すと早くなる
-        if c == curses.KEY_UP and curr_speed > max_speed:
-            curr_speed -= speed_step
-        # カーソル下を押すと遅くなる
-        elif c == curses.KEY_DOWN and curr_speed < min_speed:
-            curr_speed += speed_step
-        # press `q`
-        elif c == 113:
-            break
-        # press `r`
-        elif c == 114:
-            cell = universe.get_cell_randomly()
-            cell.is_alive = not cell.is_alive
-        time.sleep(curr_speed)
+            c = stdscr.getch()
+            # カーソル上を押すと早くなる
+            if c == curses.KEY_UP and curr_speed > max_speed:
+                curr_speed -= speed_step
+            # カーソル下を押すと遅くなる
+            elif c == curses.KEY_DOWN and curr_speed < min_speed:
+                curr_speed += speed_step
+            # press `q`
+            elif c == 113:
+                break
+            # press `r`
+            elif c == 114:
+                cell = universe.get_cell_randomly()
+                cell.is_alive = not cell.is_alive
+            time.sleep(curr_speed)
 
-        universe.step()
-        counter += 1
+            universe.step()
+            counter += 1
 
-        if curr_str == prev_str:
-            break
-        else:
-            prev_str = curr_str
+            if curr_str == prev_str:
+                break
+            else:
+                prev_str = curr_str
 
-    curses.nocbreak()
-    stdscr.nodelay(0)
-    stdscr.keypad(0)
-    curses.echo()
-    curses.endwin()
+    finally:
+        if stdscr is not None:
+            curses.nocbreak()
+            stdscr.nodelay(0)
+            stdscr.keypad(0)
+            curses.echo()
+            curses.endwin()
 
 
 if __name__ == "__main__":
