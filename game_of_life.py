@@ -34,6 +34,20 @@ class Universe(object):
     def __init__(self):
         self.rows = []
 
+    def build_grid(self, count):
+        """
+        グリッドを構築する。
+
+        :param count: グリッドの行数と列数
+        :type count: int
+        """
+        for i in range(count):
+            self.add_row()
+            for j in range(count):
+                cell = LifeCell()
+                cell.is_alive = bool(int(random.random() + 0.5))
+                self.add_cell(i, cell)
+
     def add_row(self):
         self.rows.append([])
 
@@ -89,15 +103,10 @@ class Universe(object):
             return None
 
 
-def main(cell_count):
+def main(count):
 
     universe = Universe()
-    for i in range(cell_count):
-        universe.add_row()
-        for j in range(cell_count):
-            cell = LifeCell()
-            cell.is_alive = bool(int(random.random() + 0.5))
-            universe.add_cell(i, cell)
+    universe.build_grid(count)
 
     stdscr = curses.initscr()
     curses.noecho()
