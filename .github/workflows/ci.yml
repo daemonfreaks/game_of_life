@@ -35,4 +35,4 @@ jobs:
       run: mypy *py
 
     - name: Run tests with pytest
-      run: pytest test_${{ env.target_module }}
+      run: pytest --cov --cov-report=term-missing -v test_${{ env.target_module }}
