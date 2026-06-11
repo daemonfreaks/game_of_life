@@ -6,7 +6,7 @@ on:
 
 env:
   target_module: game_of_life.py
-  test_module: test_mame_of_life.py
+  test_module: test_game_of_life.py
 
 jobs:
   test-build-deploy:
@@ -35,4 +35,4 @@ jobs:
       run: mypy *py
 
     - name: Run tests with pytest
-      run: pytest --cov --cov-report=term-missing -v test_${{ env.target_module }}
+      run: pytest --cov --cov-report=term-missing -v ${{ env.test_module }}
