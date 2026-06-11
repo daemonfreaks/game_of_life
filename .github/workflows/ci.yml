@@ -4,10 +4,6 @@ on:
   pull_request:
     branches: [ "master" ]
 
-env:
-  target_module: game_of_life.py
-  test_module: test_game_of_life.py
-
 jobs:
   test-build-deploy:
     runs-on: ubuntu-latest
@@ -29,10 +25,10 @@ jobs:
         python -m pip install --group dev
 
     - name: Lint with Ruff
-      run: ruff check *py
+      run: ruff check .
 
     - name: Type check with mype
-      run: mypy *py
+      run: mypy .
 
     - name: Run tests with pytest
-      run: pytest --cov --cov-report=term-missing -v ${{ env.test_module }}
+      run: pytest
