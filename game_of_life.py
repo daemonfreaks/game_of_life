@@ -1,12 +1,13 @@
-# coding: utf-8
+"""
+A simple implementation of Conway's Game of Life.
+"""
 
-from __future__ import print_function
 import curses
 import random
 import time
 
 
-class LifeCell(object):
+class LifeCell:
 
     def __init__(self):
         self.is_alive = False
@@ -16,11 +17,10 @@ class LifeCell(object):
         self.is_alive = self.next_alive
 
     def compute_next_state(self, alive_neighbors):
-        if not self.is_alive and alive_neighbors == 3:
+        if (not self.is_alive and alive_neighbors == 3) or \
+            (self.is_alive and alive_neighbors in (2, 3)):
             self.next_alive = True
-        elif self.is_alive and alive_neighbors in (2, 3):
-            self.next_alive = True
-        else:   
+        else:
             self.next_alive = False
 
     def __str__(self):
@@ -29,7 +29,7 @@ class LifeCell(object):
         return "."
 
 
-class Universe(object):
+class Universe:
 
     def __init__(self):
         self.rows = []
@@ -43,7 +43,7 @@ class Universe(object):
         """
         for i in range(count):
             self.add_row()
-            for j in range(count):
+            for _j in range(count):
                 cell = LifeCell()
                 cell.is_alive = bool(int(random.random() + 0.5))
                 self.add_cell(i, cell)

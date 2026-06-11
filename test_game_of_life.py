@@ -26,7 +26,7 @@ def test_compute_next_state():
     assert not cell.next_alive
 
 
-class TestUniverse(object):
+class TestUniverse:
 
     def test_get_count_of_around_alive_cell(self):
         universe = Universe()
