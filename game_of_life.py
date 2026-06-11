@@ -113,8 +113,8 @@ def main(count):
         stdscr = curses.initscr()
         curses.noecho()
         curses.cbreak()
-        stdscr.keypad(1)
-        stdscr.nodelay(1)
+        stdscr.keypad(True)
+        stdscr.nodelay(True)
         prev_str = ""
 
         min_speed = 1.0
@@ -158,8 +158,8 @@ def main(count):
     finally:
         if stdscr is not None:
             curses.nocbreak()
-            stdscr.nodelay(0)
-            stdscr.keypad(0)
+            stdscr.nodelay(False)
+            stdscr.keypad(False)
             curses.echo()
             curses.endwin()
 
