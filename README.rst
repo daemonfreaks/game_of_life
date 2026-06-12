@@ -58,6 +58,8 @@ Project Files
 * ``pyproject.toml``: Project metadata, development dependencies, and tool
   configuration
 
+----
+
 
 ライフゲーム
 ============
