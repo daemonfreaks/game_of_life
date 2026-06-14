@@ -1,5 +1,7 @@
 {
-	"name": "Python 3",
-	"image": "mcr.microsoft.com/devcontainers/python:3-3.14-trixie",
-	"postCreateCommand": "python -m pip install --upgrade pip && python -m pip install --group dev"
+  "name": "Python3",
+  "build": {
+    "dockerfile": "Dockerfile"
+  }
+  "postCreateCommand": "python -m pip install --upgrade pip && python -m pip install --group dev"
 }
