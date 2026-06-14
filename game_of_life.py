@@ -23,16 +23,12 @@ class LifeCell:
         else:
             self.next_alive = False
 
-    def __str__(self):
-        if self.is_alive:
-            return "0"
-        return "."
-
 
 class Universe:
 
-    def __init__(self):
+    def __init__(self, cell_class=LifeCell):
         self.rows = []
+        self.cell_class = cell_class
 
     def build_grid(self, count):
         """
@@ -44,7 +40,7 @@ class Universe:
         for i in range(count):
             self.add_row()
             for _j in range(count):
-                cell = LifeCell()
+                cell = self.cell_class()
                 cell.is_alive = bool(int(random.random() + 0.5))
                 self.add_cell(i, cell)
 
@@ -79,15 +75,6 @@ class Universe:
             for cell in row:
                 cell.apply_next_state()
 
-    def get_cells_string(self):
-        v = []
-        for row in self.rows:
-            for cell in row:
-                v.append(str(cell))
-                v.append(" ")
-            v.append("\n")
-        return "".join(v)
-
     def get_cell_randomly(self):
         row_index = random.choice(range(len(self.rows)))
         row = self.rows[row_index]
@@ -103,65 +90,139 @@ class Universe:
             return None
 
 
+class BaseUI:
+    """UIの基底クラス"""
+
+    def __init__(self, universe):
+        self.universe = universe
+
+    def render(self):
+        """Universeの状態を描画する。"""
+        raise NotImplementedError
+
+    def format_board(self):
+        """Boardの状態を描画するための状態を生成する。"""
+        raise NotImplementedError
+
+    def finalize(self):
+        """UIの終了処理を行う。"""
+        raise NotImplementedError
+
+
+class CursesUI(BaseUI):
+
+    def __init__(self, universe, show_generation_counter=False):
+        super().__init__(universe)
+        self.stdscr = curses.initscr()
+        curses.noecho()
+        curses.cbreak()
+        self.stdscr.keypad(True)
+        self.stdscr.nodelay(True)
+
+        # 世代カウンター用
+        self.show_generation_counter = show_generation_counter
+        self.generation = 0
+
+        # 進化状態の比較用
+        self.prev_state = ""
+        self.curr_state = ""
+
+        # 描画スピードの調整用
+        self.min_speed = 1.0
+        self.max_speed = 0.1
+        self.curr_speed = 0.5
+        self.speed_step = 0.1
+
+        # キー操作記憶用
+        self.pressed_key = None
+
+    def render(self):
+        self.prev_state = self.curr_state
+        self.curr_state = self.format_board()
+        y = 0  # 描画開始位置
+        if self.show_generation_counter:
+            self.stdscr.addstr(0, 0, f"Generation: {self.generation}\n")
+            self.generation += 1
+            y = 1
+        self.stdscr.addstr(y, 0, self.curr_state)
+        self.stdscr.refresh()
+
+    def poll_key(self):
+        self.pressed_key = self.stdscr.getch()
+
+    def format_board(self):
+        v = []
+        for row in self.universe.rows:
+            for cell in row:
+                v.append("0" if cell.is_alive else ".")
+                v.append(" ")
+            v.append("\n")
+        return "".join(v)
+
+    def finalize(self):
+        curses.nocbreak()
+        self.stdscr.nodelay(False)
+        self.stdscr.keypad(False)
+        curses.echo()
+        curses.endwin()
+
+    def quit_requested(self):
+        return self.pressed_key == 113  # press `q`
+
+    def is_stable(self):
+        return self.curr_state == self.prev_state
+
+    def handle_speed_key(self):
+        # カーソル上を押すと早くなる
+        if self.pressed_key == curses.KEY_UP and self.curr_speed > self.max_speed:
+            self.curr_speed -= self.speed_step
+        # カーソル下を押すと遅くなる
+        elif self.pressed_key == curses.KEY_DOWN and self.curr_speed < self.min_speed:
+            self.curr_speed += self.speed_step
+
+    def wait_for_next_frame(self):
+        time.sleep(self.curr_speed)
+
+    def toggle_random_cell_if_requested(self):
+        # ランダムにセルの状態を変える
+        if self.pressed_key == 114:  # press `r`
+            cell = self.universe.get_cell_randomly()
+            cell.is_alive = not cell.is_alive
+
+
 def main(count):
 
     universe = Universe()
     universe.build_grid(count)
 
-    stdscr = None
+    curses_ui = None
     try:
-        stdscr = curses.initscr()
-        curses.noecho()
-        curses.cbreak()
-        stdscr.keypad(True)
-        stdscr.nodelay(True)
-        prev_str = ""
-
-        min_speed = 1.0
-        max_speed = 0.1
-        curr_speed = 0.5
-        speed_step = 0.1
-
-        counter = 0
-
+        curses_ui = CursesUI(universe, show_generation_counter=True)
         while True:
 
-            curr_str = universe.get_cells_string()
-            stdscr.addstr(0, 0, curr_str)
-            stdscr.refresh()
-            print(counter)
+            curses_ui.render()
+            curses_ui.poll_key()
 
-            c = stdscr.getch()
-            # カーソル上を押すと早くなる
-            if c == curses.KEY_UP and curr_speed > max_speed:
-                curr_speed -= speed_step
-            # カーソル下を押すと遅くなる
-            elif c == curses.KEY_DOWN and curr_speed < min_speed:
-                curr_speed += speed_step
-            # press `q`
-            elif c == 113:
+            # 描画するスピードを調整する
+            curses_ui.handle_speed_key()
+
+            # ランダムにセルの状態を変える
+            curses_ui.toggle_random_cell_if_requested()
+
+            # 停止要求があれば終了
+            if curses_ui.quit_requested():
                 break
-            # press `r`
-            elif c == 114:
-                cell = universe.get_cell_randomly()
-                cell.is_alive = not cell.is_alive
-            time.sleep(curr_speed)
 
+            # 進化が停滞している場合は終了
+            if curses_ui.is_stable():
+                break
+
+            curses_ui.wait_for_next_frame()
             universe.step()
-            counter += 1
-
-            if curr_str == prev_str:
-                break
-            else:
-                prev_str = curr_str
 
     finally:
-        if stdscr is not None:
-            curses.nocbreak()
-            stdscr.nodelay(False)
-            stdscr.keypad(False)
-            curses.echo()
-            curses.endwin()
+        if curses_ui is not None:
+            curses_ui.finalize()
 
 
 if __name__ == "__main__":
