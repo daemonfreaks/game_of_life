@@ -5,7 +5,7 @@ An unit test module of game_of_life.py
 from game_of_life import LifeCell, Universe
 
 
-def dump_universe(universe):
+def dump_universe(universe: Universe) -> list[list[bool]]:
     """
     Universeの状態をリストで返すヘルパー関数
     :param universe: 状態を取得するUniverse
@@ -15,7 +15,7 @@ def dump_universe(universe):
     """
     return [[cell.is_alive for cell in row] for row in universe.rows]
 
-def test_compute_next_state():
+def test_compute_next_state() -> None:
     """LifeCellのcompute_next_stateのテスト"""
     cell = LifeCell()
 
@@ -39,7 +39,7 @@ def test_compute_next_state():
 
 class TestUniverse:
 
-    def test_alive_neighbors(self):
+    def test_alive_neighbors(self) -> None:
         """周囲の生きているセルの数を数えるテスト"""
         patterns = [
             [True, True, True, False, False, False],
@@ -59,7 +59,7 @@ class TestUniverse:
         # 端
         assert universe.count_alive_neighbors(5, 1) == 3
 
-    def test_step_keeps_block_stable(self):
+    def test_step_keeps_block_stable(self) -> None:
         """block静止パターン"""
         pattern = [
             [False, False, False, False],
@@ -73,7 +73,7 @@ class TestUniverse:
         universe.step()
         assert dump_universe(universe) == pattern
 
-    def test_step_oscillates_blinker(self):
+    def test_step_oscillates_blinker(self) -> None:
         """blinker振動パターン"""
         first_pattern = [
             [False, False, False, False, False],

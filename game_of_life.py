@@ -8,7 +8,7 @@ import time
 from dataclasses import dataclass
 
 
-def build_random_pattern(count):
+def build_random_pattern(count: int) -> list[list[bool]]:
     """
     ランダムなパターンを生成する。
     :param count: パターンの行数と列数
@@ -26,11 +26,11 @@ class LifeCell:
     is_alive: bool = False
     next_alive: bool = False
 
-    def apply_next_state(self):
+    def apply_next_state(self) -> None:
         """次の世代の状態を現在の状態に適用する。"""
         self.is_alive = self.next_alive
 
-    def compute_next_state(self, alive_neighbors):
+    def compute_next_state(self, alive_neighbors: int) -> None:
         """
         次の世代の状態を計算する。
          - 周囲の生きているセルが3つであれば、死んでいるセルは生まれる。
@@ -50,17 +50,17 @@ class LifeCell:
 class Universe:
     """Universeのクラス"""
 
-    def __init__(self, cell_class=LifeCell):
+    def __init__(self, cell_class: type = LifeCell) -> None:
         """
         Universeを初期化する。
 
         :param cell_class: セルのクラス
         :type cell_class: type
         """
-        self.rows = []
-        self.cell_class = cell_class
+        self.rows: list[list[LifeCell]] = []
+        self.cell_class: type = cell_class
 
-    def build_grid(self, pattern):
+    def build_grid(self, pattern: list[list[bool]]) -> None:
         """
         グリッドを構築する。
 
@@ -74,11 +74,11 @@ class Universe:
                 life_cell.is_alive = is_alive
                 self.add_cell(len(self.rows) - 1, life_cell)
 
-    def add_row(self):
+    def add_row(self) -> None:
         """行を追加する。"""
         self.rows.append([])
 
-    def add_cell(self, row_no, cell):
+    def add_cell(self, row_no: int, cell: LifeCell) -> None:
         """行にセルを追加する。
 
         :param row_no: 行番号
@@ -88,7 +88,7 @@ class Universe:
         """
         self.rows[row_no].append(cell)
 
-    def count_alive_neighbors(self, y, x):
+    def count_alive_neighbors(self, y: int, x: int) -> int:
         """周囲の生きているセルの数を数える。
 
         :param y: セルの行番号
@@ -110,7 +110,7 @@ class Universe:
                     alive_cell_count += 1
         return alive_cell_count
 
-    def step(self):
+    def step(self) -> None:
         """世代を1ステップ進める。"""
         for y, row in enumerate(self.rows):
             for x, cell in enumerate(row):
@@ -121,7 +121,7 @@ class Universe:
             for cell in row:
                 cell.apply_next_state()
 
-    def get_cell_randomly(self):
+    def get_cell_randomly(self) -> LifeCell:
         """
         ランダムにセルを取得する。
 
@@ -133,7 +133,7 @@ class Universe:
         cell_index = random.choice(range(len(row)))
         return row[cell_index]
 
-    def _get_cell(self, y, x):
+    def _get_cell(self, y: int, x: int) -> LifeCell | None:
         """
         セルを取得する。範囲外の場合はNoneを返す。
 
@@ -155,19 +155,19 @@ class Universe:
 class BaseUI:
     """UIの基底クラス"""
 
-    def __init__(self, universe):
+    def __init__(self, universe: Universe) -> None:
         """UIを初期化する。"""
         self.universe = universe
 
-    def render(self):
+    def render(self) -> None:
         """Universeの状態を描画する。"""
         raise NotImplementedError
 
-    def format_board(self):
+    def format_board(self) -> str:
         """Boardの状態を描画するための状態を生成する。"""
         raise NotImplementedError
 
-    def finalize(self):
+    def finalize(self) -> None:
         """UIの終了処理を行う。"""
         raise NotImplementedError
 
@@ -175,7 +175,8 @@ class BaseUI:
 class CursesUI(BaseUI):
     """cursesを使用したUIクラス"""
 
-    def __init__(self, universe, show_generation_counter=False):
+    def __init__(self, universe: Universe,
+                 show_generation_counter: bool = False) -> None:
         """
         CursesUIを初期化する。
 
@@ -185,30 +186,30 @@ class CursesUI(BaseUI):
         :type show_generation_counter: bool
         """
         super().__init__(universe)
-        self.stdscr = curses.initscr()
+        self.stdscr: curses.window = curses.initscr()
         curses.noecho()
         curses.cbreak()
         self.stdscr.keypad(True)
         self.stdscr.nodelay(True)
 
         # 世代カウンター用
-        self.show_generation_counter = show_generation_counter
-        self.generation = 0
+        self.show_generation_counter: bool = show_generation_counter
+        self.generation: int = 0
 
         # 進化状態の比較用
-        self.prev_state = ""
-        self.curr_state = ""
+        self.prev_state: str = ""
+        self.curr_state: str = ""
 
         # 描画スピードの調整用
-        self.min_speed = 1.0
-        self.max_speed = 0.1
-        self.curr_speed = 0.5
-        self.speed_step = 0.1
+        self.min_speed: float = 1.0
+        self.max_speed: float = 0.1
+        self.curr_speed: float = 0.5
+        self.speed_step: float = 0.1
 
         # キー操作記憶用
-        self.pressed_key = None
+        self.pressed_key: int | None = None
 
-    def render(self):
+    def render(self) -> None:
         """
         Universeの状態を描画する。
         描画前に、現在の状態をprev_stateに保存し、描画後
@@ -225,11 +226,11 @@ class CursesUI(BaseUI):
         self.stdscr.addstr(y, 0, self.curr_state)
         self.stdscr.refresh()
 
-    def poll_key(self):
+    def poll_key(self) -> None:
         """キー入力をポーリングする。"""
         self.pressed_key = self.stdscr.getch()
 
-    def format_board(self):
+    def format_board(self) -> str:
         """
         Universeの状態を描画するための文字列を生成する。
         生きているセルは"0"、死んでいるセルは"."で表現する。
@@ -245,7 +246,7 @@ class CursesUI(BaseUI):
             v.append("\n")
         return "".join(v)
 
-    def finalize(self):
+    def finalize(self) -> None:
         """
         UIの終了処理を行う。cursesの設定を元に戻す。
          - cbreakモードを解除する。
@@ -260,7 +261,7 @@ class CursesUI(BaseUI):
         curses.echo()
         curses.endwin()
 
-    def quit_requested(self):
+    def quit_requested(self) -> bool:
         """
         終了要求があるかどうかを判定する。`q`が押されている場合は終了要求があると判断する。
          - `q`が押されている場合はTrueを返す。
@@ -271,7 +272,7 @@ class CursesUI(BaseUI):
         """
         return self.pressed_key == 113  # press `q`
 
-    def is_stable(self):
+    def is_stable(self) -> bool:
         """
         進化が停滞しているかどうかを判定する。prev_stateとcurr_stateが同じであれば、進化が停滞していると判断する。
          - prev_stateとcurr_stateが同じであればTrueを返す。
@@ -282,7 +283,7 @@ class CursesUI(BaseUI):
         """
         return self.curr_state == self.prev_state
 
-    def handle_speed_key(self):
+    def handle_speed_key(self) -> None:
         """
         描画するスピードを調整する。カーソル上を押すと早くなり、カーソル下を押すと遅くなる。
          - カーソル上が押されている場合はcurr_speedをspeed_stepだけ減らす。
@@ -297,11 +298,11 @@ class CursesUI(BaseUI):
         elif self.pressed_key == curses.KEY_DOWN and self.curr_speed < self.min_speed:
             self.curr_speed += self.speed_step
 
-    def wait_for_next_frame(self):
+    def wait_for_next_frame(self) -> None:
         """次のフレームまで待機する。curr_speed秒だけ待機する。"""
         time.sleep(self.curr_speed)
 
-    def toggle_random_cell_if_requested(self):
+    def toggle_random_cell_if_requested(self) -> None:
         """
         ランダムにセルの状態を変える。
         `r`が押されている場合は、ランダムにセルを取得し、そのセルの状態を反転させる。
@@ -311,7 +312,7 @@ class CursesUI(BaseUI):
             cell.is_alive = not cell.is_alive
 
 
-def main(count):
+def main(count: int) -> None:
     """ゲームを実行する。"""
 
     pattern = build_random_pattern(count)
@@ -349,4 +350,4 @@ def main(count):
 
 
 if __name__ == "__main__":
-    print(main(20))
+    main(20)
