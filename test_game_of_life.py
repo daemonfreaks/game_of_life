@@ -5,23 +5,6 @@ An unit test module of game_of_life.py
 from game_of_life import LifeCell, Universe
 
 
-def build_universe(pattern):
-    """
-    指定したパターンのUniverseを構築するヘルパー関数
-    :param pattern: グリッドの状態を表す2次元リスト
-    :type pattern: list of list of bool
-    :return: 指定したパターンのUniverse
-    :rtype: Universe
-    """
-    universe = Universe()
-    for row in pattern:
-        universe.add_row()
-        for is_alive in row:
-            life_cell = LifeCell()
-            life_cell.is_alive = is_alive
-            universe.add_cell(len(universe.rows) - 1, life_cell)
-    return universe
-
 def dump_universe(universe):
     """
     Universeの状態をリストで返すヘルパー関数
@@ -56,7 +39,7 @@ def test_compute_next_state():
 
 class TestUniverse:
 
-    def test_get_count_of_around_alive_cell(self):
+    def test_alive_neighbors(self):
         """周囲の生きているセルの数を数えるテスト"""
         patterns = [
             [True, True, True, False, False, False],
@@ -66,14 +49,15 @@ class TestUniverse:
             [False, True, True, False, False, False],
             [False, False, True, False, False, False],
         ]
-        universe = build_universe(patterns)
+        universe = Universe()
+        universe.build_grid(patterns)
         # 境界値
-        assert universe.get_count_of_around_alive_cell(1, 1) == 8
-        assert universe.get_count_of_around_alive_cell(4, 4) == 0
+        assert universe.count_alive_neighbors(1, 1) == 8
+        assert universe.count_alive_neighbors(4, 4) == 0
         # 角
-        assert universe.get_count_of_around_alive_cell(0, 0) == 2
+        assert universe.count_alive_neighbors(0, 0) == 2
         # 端
-        assert universe.get_count_of_around_alive_cell(5, 1) == 3
+        assert universe.count_alive_neighbors(5, 1) == 3
 
     def test_step_keeps_block_stable(self):
         """block静止パターン"""
@@ -84,7 +68,8 @@ class TestUniverse:
             [False, False, False, False],
         ]
 
-        universe = build_universe(pattern)
+        universe = Universe()
+        universe.build_grid(pattern)
         universe.step()
         assert dump_universe(universe) == pattern
 
@@ -105,7 +90,8 @@ class TestUniverse:
             [False, False, False, False, False],
         ]
 
-        universe = build_universe(first_pattern)
+        universe = Universe()
+        universe.build_grid(first_pattern)
 
         universe.step()
         assert dump_universe(universe) == second_pattern
