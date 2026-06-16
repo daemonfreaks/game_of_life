@@ -238,7 +238,7 @@ class CursesUI(BaseUI):
         :return: 描画するための文字列
         :rtype: str
         """
-        v = []
+        v: list[str] = []
         for row in self.universe.rows:
             for cell in row:
                 v.append("0" if cell.is_alive else ".")
