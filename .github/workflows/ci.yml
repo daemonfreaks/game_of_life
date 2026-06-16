@@ -1,15 +1,15 @@
 name: Python CI
 
 on:
-  pull_request:
-    branches: [ "master" ]
+  push:
+    branches: [ "**" ]
 
 jobs:
-  test-build-deploy:
+  linter-typecheck-test:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        python-version: ["3.10", "3.14"]
+        python-version: ["3.10", "3.11", "3.12", "3.13", "3.14"]
 
     steps:
     - uses: actions/checkout@v6
@@ -27,7 +27,7 @@ jobs:
     - name: Lint with Ruff
       run: ruff check .
 
-    - name: Type check with mype
+    - name: Type check with mypy
       run: mypy .
 
     - name: Run tests with pytest
