@@ -352,7 +352,7 @@ def main(count: int) -> None:
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("cell_count", help="Specify the number of cells in one row/column.",
-                        type=int)
+    help_text: str = "Specify the number of cells in one row/column"
+    parser.add_argument("cell_count", help=help_text, type=int)
     args = parser.parse_args()
     main(args.cell_count)
