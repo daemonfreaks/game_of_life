@@ -2,6 +2,7 @@
 A simple implementation of Conway's Game of Life.
 """
 
+import argparse
 import curses
 import random
 import time
@@ -350,4 +351,8 @@ def main(count: int) -> None:
 
 
 if __name__ == "__main__":
-    main(20)
+    parser = argparse.ArgumentParser()
+    parser.add_argument("cell_count", help="Specify the number of cells in one row/column.",
+                        type=int)
+    args = parser.parse_args()
+    main(args.cell_count)
