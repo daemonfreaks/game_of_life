@@ -159,9 +159,14 @@ class BaseUI:
     def __init__(self, universe: Universe) -> None:
         """UIを初期化する。"""
         self.universe = universe
+        self.pressed_key: int = 0
 
     def render(self) -> None:
         """Universeの状態を描画する。"""
+        raise NotImplementedError
+
+    def poll_key(self) -> None:
+        """キー入力を取得する。"""
         raise NotImplementedError
 
     def format_board(self) -> str:
@@ -208,7 +213,7 @@ class CursesUI(BaseUI):
         self.speed_step: float = 0.1
 
         # キー操作記憶用
-        self.pressed_key: int | None = None
+        self.pressed_key: int = 0
 
     def render(self) -> None:
         """
@@ -262,6 +267,71 @@ class CursesUI(BaseUI):
         curses.echo()
         curses.endwin()
 
+
+
+class BaseController:
+    """制御クラス"""
+
+    def __init__(self, universe: Universe, ui: BaseUI) -> None:
+        """制御を初期化する"""
+        self.universe: Universe = universe
+        self.ui: BaseUI = ui
+
+        # 世代カウンター用
+        self.generation: int = 0
+
+        # 進化状態の比較用
+        self.prev_state: str = ""
+        self.curr_state: str = ""
+
+        # 描画スピードの調整用
+        self.min_speed: float = 1.0
+        self.max_speed: float = 0.1
+        self.curr_speed: float = 0.5
+        self.speed_step: float = 0.1
+
+
+    def run(self) -> None:
+        raise NotImplementedError
+
+    def quit_requested(self) -> bool:
+        raise NotImplementedError
+
+    def is_stable(self) -> bool:
+        raise NotImplementedError
+
+    def handle_speed_key(self) -> None:
+        raise NotImplementedError
+
+    def wait_for_next_frame(self) -> None:
+        raise NotImplementedError
+
+    def toggle_random_cell_if_requested(self) ->None:
+        raise NotImplementedError
+
+class CursesController(BaseController):
+    """"""
+
+    def run(self) -> None:
+        while True:
+            self.prev_state = self.curr_state
+            self.curr_state = self.ui.format_board()
+            self.ui.render()
+            self.ui.poll_key()
+
+            self.handle_speed_key()
+
+            self.toggle_random_cell_if_requested()
+
+            if self.quit_requested():
+                break
+
+            if self.is_stable():
+                break
+
+            self.wait_for_next_frame()
+            self.universe.step()
+
     def quit_requested(self) -> bool:
         """
         終了要求があるかどうかを判定する。`q`が押されている場合は終了要求があると判断する。
@@ -271,7 +341,7 @@ class CursesUI(BaseUI):
         :return: 終了要求があるかどうか
         :rtype: bool
         """
-        return self.pressed_key == 113  # press `q`
+        return self.ui.pressed_key == 113  # press `q`
 
     def is_stable(self) -> bool:
         """
@@ -293,10 +363,12 @@ class CursesUI(BaseUI):
            ただし、curr_speedがmax_speedより大きくならないようにする。
         """
         # カーソル上を押すと早くなる
-        if self.pressed_key == curses.KEY_UP and self.curr_speed > self.max_speed:
+        if self.ui.pressed_key == curses.KEY_UP and \
+            self.curr_speed > self.max_speed:
             self.curr_speed -= self.speed_step
         # カーソル下を押すと遅くなる
-        elif self.pressed_key == curses.KEY_DOWN and self.curr_speed < self.min_speed:
+        elif self.ui.pressed_key == curses.KEY_DOWN and \
+            self.curr_speed < self.min_speed:
             self.curr_speed += self.speed_step
 
     def wait_for_next_frame(self) -> None:
@@ -308,10 +380,9 @@ class CursesUI(BaseUI):
         ランダムにセルの状態を変える。
         `r`が押されている場合は、ランダムにセルを取得し、そのセルの状態を反転させる。
         """
-        if self.pressed_key == 114:  # press `r`
+        if self.ui.pressed_key == 114:  # press `r`
             cell = self.universe.get_cell_randomly()
             cell.is_alive = not cell.is_alive
-
 
 def main(count: int) -> None:
     """ゲームを実行する。"""
@@ -323,28 +394,8 @@ def main(count: int) -> None:
     curses_ui = None
     try:
         curses_ui = CursesUI(universe, show_generation_counter=True)
-        while True:
-
-            curses_ui.render()
-            curses_ui.poll_key()
-
-            # 描画するスピードを調整する
-            curses_ui.handle_speed_key()
-
-            # ランダムにセルの状態を変える
-            curses_ui.toggle_random_cell_if_requested()
-
-            # 停止要求があれば終了
-            if curses_ui.quit_requested():
-                break
-
-            # 進化が停滞している場合は終了
-            if curses_ui.is_stable():
-                break
-
-            curses_ui.wait_for_next_frame()
-            universe.step()
-
+        curses_controller = CursesController(universe, curses_ui)
+        curses_controller.run()
     finally:
         if curses_ui is not None:
             curses_ui.finalize()
