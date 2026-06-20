@@ -153,6 +153,22 @@ class Universe:
             return None
 
 
+@dataclass
+class Event:
+    """イベントのクラス"""
+    speed_up: bool = False
+    speed_down: bool = False
+    toggle_random_cell: bool = False
+    quit: bool = False
+
+    def reset(self) -> None:
+        """イベントをリセットする。"""
+        self.speed_up = False
+        self.speed_down = False
+        self.toggle_random_cell = False
+        self.quit = False
+
+
 class BaseUI:
     """UIの基底クラス"""
 
@@ -160,8 +176,8 @@ class BaseUI:
                  show_generation_counter: bool = False) -> None:
         """UIを初期化する。"""
         self.universe = universe
-        self.pressed_key: int = 0
         self.show_generation_counter: bool = show_generation_counter
+        self.event: Event = Event()
 
     def render(self, generation: int) -> str:
         """
@@ -223,7 +239,16 @@ class CursesUI(BaseUI):
 
     def poll_key(self) -> None:
         """キー入力をポーリングする。"""
-        self.pressed_key = self.stdscr.getch()
+        pressed_key = self.stdscr.getch()
+        self.event.reset()
+        if pressed_key == curses.KEY_UP:
+            self.event.speed_up = True
+        elif pressed_key == curses.KEY_DOWN:
+            self.event.speed_down = True
+        elif pressed_key == ord("r"):  # press `r`
+            self.event.toggle_random_cell = True
+        elif pressed_key == ord("q"):  # press `q`
+            self.event.quit = True
 
     def format_board(self) -> str:
         """
@@ -257,7 +282,7 @@ class CursesUI(BaseUI):
         curses.endwin()
 
 
-class BaseController:
+class Controller:
     """制御クラス"""
 
     def __init__(self, universe: Universe, ui: BaseUI) -> None:
@@ -273,32 +298,10 @@ class BaseController:
         self.curr_state: str = ""
 
         # 描画スピードの調整用
-        self.min_speed: float = 1.0
-        self.max_speed: float = 0.1
-        self.curr_speed: float = 0.5
-        self.speed_step: float = 0.1
-
-
-    def run(self) -> None:
-        raise NotImplementedError
-
-    def quit_requested(self) -> bool:
-        raise NotImplementedError
-
-    def is_stable(self) -> bool:
-        raise NotImplementedError
-
-    def handle_speed_key(self) -> None:
-        raise NotImplementedError
-
-    def wait_for_next_frame(self) -> None:
-        raise NotImplementedError
-
-    def toggle_random_cell_if_requested(self) -> None:
-        raise NotImplementedError
-
-class CursesController(BaseController):
-    """ cursesを使用した制御クラス """
+        self.slowest_time_delay: float = 1.0
+        self.fastest_time_delay: float = 0.1
+        self.curr_time_delay: float = 0.5
+        self.time_step: float = 0.1
 
     def run(self) -> None:
         while True:
@@ -329,7 +332,7 @@ class CursesController(BaseController):
         :return: 終了要求があるかどうか
         :rtype: bool
         """
-        return self.ui.pressed_key == 113  # press `q`
+        return self.ui.event.quit
 
     def is_stable(self) -> bool:
         """
@@ -345,29 +348,32 @@ class CursesController(BaseController):
     def handle_speed_key(self) -> None:
         """
         描画するスピードを調整する。カーソル上を押すと早くなり、カーソル下を押すと遅くなる。
-         - カーソル上が押されている場合はcurr_speedをspeed_stepだけ減らす。
-           ただし、curr_speedがmax_speedより小さくならないようにする。
-         - カーソル下が押されている場合はcurr_speedをspeed_stepだけ増やす。
-           ただし、curr_speedがmin_speedより大きくならないようにする。
+         - カーソル上が押されている場合はcurr_time_delayをtime_stepだけ減らす。
+           ただし、curr_time_delayがfastest_time_delayより小さくならないようにする。
+         - カーソル下が押されている場合はcurr_time_delayをtime_stepだけ増やす。
+           ただし、curr_time_delayがslowest_time_delayより大きくならないようにする。
         """
         # カーソル上を押すと早くなる
-        if self.ui.pressed_key == curses.KEY_UP and self.curr_speed > self.max_speed:
-            self.curr_speed -= self.speed_step
+        if self.ui.event.speed_up:
+            self.curr_time_delay -= self.time_step
+            # 下限でクランプ
+            self.curr_time_delay = max(self.curr_time_delay, self.fastest_time_delay)
         # カーソル下を押すと遅くなる
-        elif (self.ui.pressed_key == curses.KEY_DOWN and
-            self.curr_speed < self.min_speed):
-            self.curr_speed += self.speed_step
+        elif self.ui.event.speed_down:
+            self.curr_time_delay += self.time_step
+            # 上限でクランプ
+            self.curr_time_delay = min(self.curr_time_delay, self.slowest_time_delay)
 
     def wait_for_next_frame(self) -> None:
-        """次のフレームまで待機する。curr_speed秒だけ待機する。"""
-        time.sleep(self.curr_speed)
+        """次のフレームまで待機する。curr_time_delay秒だけ待機する。"""
+        time.sleep(self.curr_time_delay)
 
     def toggle_random_cell_if_requested(self) -> None:
         """
         ランダムにセルの状態を変える。
         `r`が押されている場合は、ランダムにセルを取得し、そのセルの状態を反転させる。
         """
-        if self.ui.pressed_key == 114:  # press `r`
+        if self.ui.event.toggle_random_cell:
             cell = self.universe.get_cell_randomly()
             cell.is_alive = not cell.is_alive
 
@@ -381,8 +387,8 @@ def main(count: int) -> None:
     curses_ui = None
     try:
         curses_ui = CursesUI(universe, show_generation_counter=True)
-        curses_controller = CursesController(universe, curses_ui)
-        curses_controller.run()
+        controller = Controller(universe, curses_ui)
+        controller.run()
     finally:
         if curses_ui is not None:
             curses_ui.finalize()
