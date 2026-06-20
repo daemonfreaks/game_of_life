@@ -152,6 +152,7 @@ class Universe:
         except IndexError:
             return None
 
+
 @dataclass
 class Event:
     """イベントのクラス"""
@@ -166,6 +167,7 @@ class Event:
         self.speed_down = False
         self.toggle_random_cell = False
         self.quit = False
+
 
 class BaseUI:
     """UIの基底クラス"""
