@@ -362,11 +362,8 @@ class Controller:
         `r`が押されている場合は、ランダムにセルを取得し、そのセルの状態を反転させる。
         """
         if self.ui.event.toggle_random_cell:
-            #cell = self.universe.get_cell_randomly()
-            row_index = random.choice(range(len(self.universe.rows)))
-            row = self.universe.rows[row_index]
-            cell_index = random.choice(range(len(row)))
-            cell = row[cell_index]
+            row = random.choice(self.universe.rows)
+            cell = random.choice(row)
             cell.is_alive = not cell.is_alive
 
 def main(count: int) -> None:
