@@ -156,13 +156,22 @@ class Universe:
 class BaseUI:
     """UIの基底クラス"""
 
-    def __init__(self, universe: Universe) -> None:
+    def __init__(self, universe: Universe,
+                 show_generation_counter: bool = False) -> None:
         """UIを初期化する。"""
         self.universe = universe
         self.pressed_key: int = 0
+        self.show_generation_counter: bool = show_generation_counter
 
     def render(self, generation: int) -> str:
-        """Universeの状態を描画する。"""
+        """
+        Universeの状態を描画する。
+
+        :param generation: 現在の世代数
+        :type generation: int
+        :return: 描画した状態の文字列
+        :rtype: str
+        """
         raise NotImplementedError
 
     def poll_key(self) -> None:
@@ -197,12 +206,6 @@ class CursesUI(BaseUI):
         curses.cbreak()
         self.stdscr.keypad(True)
         self.stdscr.nodelay(True)
-
-        # 世代カウンター用
-        self.show_generation_counter: bool = show_generation_counter
-
-        # キー操作記憶用
-        self.pressed_key: int = 0
 
     def render(self, generation: int) -> str:
         """
@@ -252,7 +255,6 @@ class CursesUI(BaseUI):
         self.stdscr.keypad(False)
         curses.echo()
         curses.endwin()
-
 
 
 class BaseController:
