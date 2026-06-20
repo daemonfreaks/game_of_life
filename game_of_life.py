@@ -161,7 +161,7 @@ class BaseUI:
         self.universe = universe
         self.pressed_key: int = 0
 
-    def render(self) -> None:
+    def render(self, generation: int) -> str:
         """Universeの状態を描画する。"""
         raise NotImplementedError
 
@@ -200,37 +200,23 @@ class CursesUI(BaseUI):
 
         # 世代カウンター用
         self.show_generation_counter: bool = show_generation_counter
-        self.generation: int = 0
-
-        # 進化状態の比較用
-        self.prev_state: str = ""
-        self.curr_state: str = ""
-
-        # 描画スピードの調整用
-        self.min_speed: float = 1.0
-        self.max_speed: float = 0.1
-        self.curr_speed: float = 0.5
-        self.speed_step: float = 0.1
 
         # キー操作記憶用
         self.pressed_key: int = 0
 
-    def render(self) -> None:
+    def render(self, generation: int) -> str:
         """
         Universeの状態を描画する。
-        描画前に、現在の状態をprev_stateに保存し、描画後
-         - prev_stateとcurr_stateが同じであれば、進化が停滞していると判断する。
-         - show_generation_counterがTrueであれば、世代カウンターを表示する。
+        show_generation_counterがTrueであれば、世代カウンターを表示する。
         """
-        self.prev_state = self.curr_state
-        self.curr_state = self.format_board()
         y = 0  # 描画開始位置
         if self.show_generation_counter:
-            self.stdscr.addstr(0, 0, f"Generation: {self.generation}\n")
-            self.generation += 1
+            self.stdscr.addstr(0, 0, f"Generation: {generation}\n")
             y = 1
-        self.stdscr.addstr(y, 0, self.curr_state)
+        state: str = self.format_board()
+        self.stdscr.addstr(y, 0, state)
         self.stdscr.refresh()
+        return state
 
     def poll_key(self) -> None:
         """キー入力をポーリングする。"""
@@ -306,31 +292,31 @@ class BaseController:
     def wait_for_next_frame(self) -> None:
         raise NotImplementedError
 
-    def toggle_random_cell_if_requested(self) ->None:
+    def toggle_random_cell_if_requested(self) -> None:
         raise NotImplementedError
 
 class CursesController(BaseController):
-    """"""
+    """ cursesを使用した制御クラス """
 
     def run(self) -> None:
         while True:
-            self.prev_state = self.curr_state
-            self.curr_state = self.ui.format_board()
-            self.ui.render()
             self.ui.poll_key()
-
-            self.handle_speed_key()
-
             self.toggle_random_cell_if_requested()
 
-            if self.quit_requested():
-                break
+            self.prev_state = self.curr_state
+            self.curr_state = self.ui.render(self.generation)
 
             if self.is_stable():
                 break
 
+            if self.quit_requested():
+                break
+
+            self.handle_speed_key()
             self.wait_for_next_frame()
+
             self.universe.step()
+            self.generation += 1
 
     def quit_requested(self) -> bool:
         """
@@ -363,12 +349,11 @@ class CursesController(BaseController):
            ただし、curr_speedがmax_speedより大きくならないようにする。
         """
         # カーソル上を押すと早くなる
-        if self.ui.pressed_key == curses.KEY_UP and \
-            self.curr_speed > self.max_speed:
+        if self.ui.pressed_key == curses.KEY_UP and self.curr_speed > self.max_speed:
             self.curr_speed -= self.speed_step
         # カーソル下を押すと遅くなる
-        elif self.ui.pressed_key == curses.KEY_DOWN and \
-            self.curr_speed < self.min_speed:
+        elif (self.ui.pressed_key == curses.KEY_DOWN and
+            self.curr_speed < self.min_speed):
             self.curr_speed += self.speed_step
 
     def wait_for_next_frame(self) -> None:
