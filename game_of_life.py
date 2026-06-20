@@ -346,9 +346,9 @@ class CursesController(BaseController):
         """
         描画するスピードを調整する。カーソル上を押すと早くなり、カーソル下を押すと遅くなる。
          - カーソル上が押されている場合はcurr_speedをspeed_stepだけ減らす。
-           ただし、curr_speedがmin_speedより小さくならないようにする。
+           ただし、curr_speedがmax_speedより小さくならないようにする。
          - カーソル下が押されている場合はcurr_speedをspeed_stepだけ増やす。
-           ただし、curr_speedがmax_speedより大きくならないようにする。
+           ただし、curr_speedがmin_speedより大きくならないようにする。
         """
         # カーソル上を押すと早くなる
         if self.ui.pressed_key == curses.KEY_UP and self.curr_speed > self.max_speed:
