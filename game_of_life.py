@@ -152,6 +152,20 @@ class Universe:
         except IndexError:
             return None
 
+@dataclass
+class Event:
+    """イベントのクラス"""
+    SPEED_UP: bool = False
+    SPEED_DOWN: bool = False
+    TOGGLE_RANDOM_CELL: bool = False
+    QUIT: bool = False
+
+    def reset(self) -> None:
+        """イベントをリセットする。"""
+        self.SPEED_UP = False
+        self.SPEED_DOWN = False
+        self.TOGGLE_RANDOM_CELL = False
+        self.QUIT = False
 
 class BaseUI:
     """UIの基底クラス"""
@@ -162,6 +176,7 @@ class BaseUI:
         self.universe = universe
         self.pressed_key: int = 0
         self.show_generation_counter: bool = show_generation_counter
+        self.event: Event = Event()
 
     def render(self, generation: int) -> str:
         """
@@ -223,7 +238,16 @@ class CursesUI(BaseUI):
 
     def poll_key(self) -> None:
         """キー入力をポーリングする。"""
-        self.pressed_key = self.stdscr.getch()
+        self.event.reset()
+        pressed_key = self.stdscr.getch()
+        if pressed_key == curses.KEY_UP:
+            self.event.SPEED_UP = True
+        elif pressed_key == curses.KEY_DOWN:
+            self.event.SPEED_DOWN = True
+        elif pressed_key == 114:  # press `r`
+            self.event.TOGGLE_RANDOM_CELL = True
+        elif pressed_key == 113:  # press `q`
+            self.event.QUIT = True
 
     def format_board(self) -> str:
         """
@@ -257,7 +281,7 @@ class CursesUI(BaseUI):
         curses.endwin()
 
 
-class BaseController:
+class Controller:
     """制御クラス"""
 
     def __init__(self, universe: Universe, ui: BaseUI) -> None:
@@ -277,28 +301,6 @@ class BaseController:
         self.max_speed: float = 0.1
         self.curr_speed: float = 0.5
         self.speed_step: float = 0.1
-
-
-    def run(self) -> None:
-        raise NotImplementedError
-
-    def quit_requested(self) -> bool:
-        raise NotImplementedError
-
-    def is_stable(self) -> bool:
-        raise NotImplementedError
-
-    def handle_speed_key(self) -> None:
-        raise NotImplementedError
-
-    def wait_for_next_frame(self) -> None:
-        raise NotImplementedError
-
-    def toggle_random_cell_if_requested(self) -> None:
-        raise NotImplementedError
-
-class CursesController(BaseController):
-    """ cursesを使用した制御クラス """
 
     def run(self) -> None:
         while True:
@@ -329,7 +331,7 @@ class CursesController(BaseController):
         :return: 終了要求があるかどうか
         :rtype: bool
         """
-        return self.ui.pressed_key == 113  # press `q`
+        return self.ui.event.QUIT
 
     def is_stable(self) -> bool:
         """
@@ -351,11 +353,10 @@ class CursesController(BaseController):
            ただし、curr_speedがmin_speedより大きくならないようにする。
         """
         # カーソル上を押すと早くなる
-        if self.ui.pressed_key == curses.KEY_UP and self.curr_speed > self.max_speed:
+        if self.ui.event.SPEED_UP and self.curr_speed > self.max_speed:
             self.curr_speed -= self.speed_step
         # カーソル下を押すと遅くなる
-        elif (self.ui.pressed_key == curses.KEY_DOWN and
-            self.curr_speed < self.min_speed):
+        elif self.ui.event.SPEED_DOWN and self.curr_speed < self.min_speed:
             self.curr_speed += self.speed_step
 
     def wait_for_next_frame(self) -> None:
@@ -367,7 +368,7 @@ class CursesController(BaseController):
         ランダムにセルの状態を変える。
         `r`が押されている場合は、ランダムにセルを取得し、そのセルの状態を反転させる。
         """
-        if self.ui.pressed_key == 114:  # press `r`
+        if self.ui.event.TOGGLE_RANDOM_CELL:
             cell = self.universe.get_cell_randomly()
             cell.is_alive = not cell.is_alive
 
@@ -381,8 +382,8 @@ def main(count: int) -> None:
     curses_ui = None
     try:
         curses_ui = CursesUI(universe, show_generation_counter=True)
-        curses_controller = CursesController(universe, curses_ui)
-        curses_controller.run()
+        controller = Controller(universe, curses_ui)
+        controller.run()
     finally:
         if curses_ui is not None:
             curses_ui.finalize()
