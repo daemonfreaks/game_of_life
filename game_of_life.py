@@ -296,8 +296,8 @@ class Controller:
         self.curr_state: str = ""
 
         # 描画スピードの調整用
-        self.min_time_delay: float = 1.0
-        self.max_time_delay: float = 0.1
+        self.slowest_time_delay: float = 1.0
+        self.fastest_time_delay: float = 0.1
         self.curr_time_delay: float = 0.5
         self.time_step: float = 0.1
 
@@ -347,16 +347,20 @@ class Controller:
         """
         描画するスピードを調整する。カーソル上を押すと早くなり、カーソル下を押すと遅くなる。
          - カーソル上が押されている場合はcurr_time_delayをtime_stepだけ減らす。
-           ただし、curr_time_delayがmax_time_delayより小さくならないようにする。
+           ただし、curr_time_delayがfastest_time_delayより小さくならないようにする。
          - カーソル下が押されている場合はcurr_time_delayをtime_stepだけ増やす。
-           ただし、curr_time_delayがmin_time_delayより大きくならないようにする。
+           ただし、curr_time_delayがslowest_time_delayより大きくならないようにする。
         """
         # カーソル上を押すと早くなる
-        if self.ui.event.speed_up and self.curr_time_delay > self.max_time_delay:
+        if self.ui.event.speed_up:
             self.curr_time_delay -= self.time_step
+            # 下限でクランプ
+            self.curr_time_delay = max(self.curr_time_delay, self.fastest_time_delay)
         # カーソル下を押すと遅くなる
-        elif self.ui.event.speed_down and self.curr_time_delay < self.min_time_delay:
+        elif self.ui.event.speed_down:
             self.curr_time_delay += self.time_step
+            # 上限でクランプ
+            self.curr_time_delay = min(self.curr_time_delay, self.slowest_time_delay)
 
     def wait_for_next_frame(self) -> None:
         """次のフレームまで待機する。curr_time_delay秒だけ待機する。"""
