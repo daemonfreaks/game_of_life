@@ -200,7 +200,7 @@ class CursesUI(BaseUI):
         :param show_generation_counter: 世代カウンターを表示するかどうか
         :type show_generation_counter: bool
         """
-        super().__init__(universe)
+        super().__init__(universe, show_generation_counter)
         self.stdscr: curses.window = curses.initscr()
         curses.noecho()
         curses.cbreak()
