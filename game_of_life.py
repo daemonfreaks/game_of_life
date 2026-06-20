@@ -122,18 +122,6 @@ class Universe:
             for cell in row:
                 cell.apply_next_state()
 
-    def get_cell_randomly(self) -> LifeCell:
-        """
-        ランダムにセルを取得する。
-
-        :return: ランダムに取得したセル
-        :rtype: LifeCell
-        """
-        row_index = random.choice(range(len(self.rows)))
-        row = self.rows[row_index]
-        cell_index = random.choice(range(len(row)))
-        return row[cell_index]
-
     def _get_cell(self, y: int, x: int) -> LifeCell | None:
         """
         セルを取得する。範囲外の場合はNoneを返す。
@@ -374,7 +362,12 @@ class Controller:
         `r`が押されている場合は、ランダムにセルを取得し、そのセルの状態を反転させる。
         """
         if self.ui.event.toggle_random_cell:
-            cell = self.universe.get_cell_randomly()
+            if not self.universe.rows:
+                return
+            row = random.choice(self.universe.rows)
+            if not row:
+                return
+            cell = random.choice(row)
             cell.is_alive = not cell.is_alive
 
 def main(count: int) -> None:
