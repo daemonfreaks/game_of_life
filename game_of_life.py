@@ -48,18 +48,24 @@ class LifeCell:
             self.next_alive = False
 
 
+@dataclass(frozen=True)
+class UniverseSnapshot:
+    """Universeのスナップショットのクラス"""
+    rows: tuple[tuple[bool, ...], ...]
+
+
 class Universe:
     """Universeのクラス"""
 
-    def __init__(self, cell_class: type = LifeCell) -> None:
+    def __init__(self, cell_class: type[LifeCell] = LifeCell) -> None:
         """
         Universeを初期化する。
 
         :param cell_class: セルのクラス
-        :type cell_class: type
+        :type cell_class: type[LifeCell]
         """
-        self.rows: list[list[LifeCell]] = []
-        self.cell_class: type = cell_class
+        self._rows: list[list[LifeCell]] = []
+        self._cell_class: type[LifeCell] = cell_class
 
     def build_grid(self, pattern: list[list[bool]]) -> None:
         """
@@ -71,13 +77,13 @@ class Universe:
         for row in pattern:
             self.add_row()
             for is_alive in row:
-                life_cell = self.cell_class()
+                life_cell = self._cell_class()
                 life_cell.is_alive = is_alive
-                self.add_cell(len(self.rows) - 1, life_cell)
+                self.add_cell(len(self._rows) - 1, life_cell)
 
     def add_row(self) -> None:
         """行を追加する。"""
-        self.rows.append([])
+        self._rows.append([])
 
     def add_cell(self, row_no: int, cell: LifeCell) -> None:
         """行にセルを追加する。
@@ -87,7 +93,7 @@ class Universe:
         :param cell: 追加するセル
         :type cell: LifeCell
         """
-        self.rows[row_no].append(cell)
+        self._rows[row_no].append(cell)
 
     def count_alive_neighbors(self, y: int, x: int) -> int:
         """周囲の生きているセルの数を数える。
@@ -113,14 +119,61 @@ class Universe:
 
     def step(self) -> None:
         """世代を1ステップ進める。"""
-        for y, row in enumerate(self.rows):
+        for y, row in enumerate(self._rows):
             for x, cell in enumerate(row):
                 count_neighbors = self.count_alive_neighbors(y, x)
                 cell.compute_next_state(count_neighbors)
 
-        for row in self.rows:
+        for row in self._rows:
             for cell in row:
                 cell.apply_next_state()
+
+    def get_snapshot(self) -> UniverseSnapshot:
+        """
+        現在の状態をスナップショットとして取得する。
+
+        :return: 現在の状態のスナップショット
+        :rtype: UniverseSnapshot
+        """
+        return UniverseSnapshot(
+            rows=tuple(tuple(cell.is_alive for cell in row) for row in self._rows)
+        )
+
+    def toggle_cell(self, y: int, x: int) -> None:
+        """
+        セルの状態を反転させる。範囲外の場合は何もしない。
+
+        :param y: セルの行番号
+        :type y: int
+        :param x: セルの列番号
+        :type x: int
+        """
+        cell = self._get_cell(y, x)
+        if cell is None:
+            return
+        cell.is_alive = not cell.is_alive
+
+    def get_row_count(self) -> int:
+        """
+        行数を取得する。
+
+        :return: 行数
+        :rtype: int
+        """
+        return len(self._rows)
+
+    def get_column_count(self, row_no: int) -> int:
+        """
+        列数を取得する。row_noが範囲外の場合は0を返す。
+
+        :param row_no: 行番号
+        :type row_no: int
+        :return: 列数
+        :rtype: int
+        """
+        if row_no < 0 or row_no >= len(self._rows):
+            return 0
+        return len(self._rows[row_no])
 
     def _get_cell(self, y: int, x: int) -> LifeCell | None:
         """
@@ -136,7 +189,7 @@ class Universe:
         if y < 0 or x < 0:
             return None
         try:
-            return self.rows[y][x]
+            return self._rows[y][x]
         except IndexError:
             return None
 
@@ -247,9 +300,10 @@ class CursesUI(BaseUI):
         :rtype: str
         """
         v: list[str] = []
-        for row in self.universe.rows:
-            for cell in row:
-                v.append("0" if cell.is_alive else ".")
+        snapshot = self.universe.get_snapshot()
+        for row in snapshot.rows:
+            for is_alive in row:
+                v.append("0" if is_alive else ".")
                 v.append(" ")
             v.append("\n")
         return "".join(v)
@@ -362,13 +416,13 @@ class Controller:
         `r`が押されている場合は、ランダムにセルを取得し、そのセルの状態を反転させる。
         """
         if self.ui.event.toggle_random_cell:
-            if not self.universe.rows:
+            if not self.universe.get_row_count():
                 return
-            row = random.choice(self.universe.rows)
-            if not row:
+            row_no = random.randint(0, self.universe.get_row_count() - 1)
+            col_no = self.universe.get_column_count(row_no)
+            if col_no == 0:
                 return
-            cell = random.choice(row)
-            cell.is_alive = not cell.is_alive
+            self.universe.toggle_cell(row_no, random.randint(0, col_no - 1))
 
 def main(count: int) -> None:
     """ゲームを実行する。"""

@@ -13,7 +13,8 @@ def dump_universe(universe: Universe) -> list[list[bool]]:
     :return: Universeの状態を表す2次元リスト
     :rtype: list of list of bool
     """
-    return [[cell.is_alive for cell in row] for row in universe.rows]
+    snapshot = universe.get_snapshot()
+    return [list(row) for row in snapshot.rows]
 
 def test_compute_next_state() -> None:
     """LifeCellのcompute_next_stateのテスト"""
