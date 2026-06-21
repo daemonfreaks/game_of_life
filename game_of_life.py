@@ -62,7 +62,7 @@ class Universe:
         Universeを初期化する。
 
         :param cell_class: セルのクラス
-        :type cell_class: type
+        :type cell_class: type[LifeCell]
         """
         self._rows: list[list[LifeCell]] = []
         self._cell_class: type[LifeCell] = cell_class
@@ -141,7 +141,7 @@ class Universe:
 
     def toggle_cell(self, y: int, x: int) -> None:
         """
-        セルの状態を反転させる。
+        セルの状態を反転させる。範囲外の場合は何もしない。
 
         :param y: セルの行番号
         :type y: int
@@ -164,7 +164,7 @@ class Universe:
 
     def get_column_count(self, row_no: int) -> int:
         """
-        列数を取得する。
+        列数を取得する。row_noが範囲外の場合は0を返す。
 
         :param row_no: 行番号
         :type row_no: int
