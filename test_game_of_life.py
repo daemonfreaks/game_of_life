@@ -14,7 +14,7 @@ def dump_universe(universe: Universe) -> list[list[bool]]:
     :rtype: list of list of bool
     """
     snapshot = universe.get_snapshot()
-    return [[cell for cell in row] for row in snapshot.rows]
+    return [list(row) for row in snapshot.rows]
 
 def test_compute_next_state() -> None:
     """LifeCellのcompute_next_stateのテスト"""

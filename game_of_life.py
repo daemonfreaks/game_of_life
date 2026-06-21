@@ -57,7 +57,7 @@ class UniverseSnapshot:
 class Universe:
     """Universeのクラス"""
 
-    def __init__(self, cell_class: type = LifeCell) -> None:
+    def __init__(self, cell_class: type[LifeCell] = LifeCell) -> None:
         """
         Universeを初期化する。
 
@@ -65,7 +65,7 @@ class Universe:
         :type cell_class: type
         """
         self._rows: list[list[LifeCell]] = []
-        self._cell_class: type = cell_class
+        self._cell_class: type[LifeCell] = cell_class
 
     def build_grid(self, pattern: list[list[bool]]) -> None:
         """
