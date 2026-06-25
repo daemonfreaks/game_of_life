@@ -245,8 +245,6 @@ class CursesUI(BaseUI):
         """
         CursesUIを初期化する。
 
-        :param universe: 描画するUniverse
-        :type universe: Universe
         :param show_generation_counter: 世代カウンターを表示するかどうか
         :type show_generation_counter: bool
         """
