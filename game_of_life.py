@@ -292,6 +292,8 @@ class CursesUI(BaseUI):
 
         :param y: 描画開始位置
         :type y: int
+        :param universe_snapshot: Universeのスナップショット
+        :type universe_snapshot: UniverseSnapshot
         """
         state: str = self._format_board(universe_snapshot)
         self.stdscr.addstr(y, 0, state)
