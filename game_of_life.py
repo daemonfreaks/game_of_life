@@ -213,30 +213,24 @@ class Event:
 class BaseUI:
     """UIの基底クラス"""
 
-    def __init__(self, universe: Universe,
-                 show_generation_counter: bool = False) -> None:
+    def __init__(self, show_generation_counter: bool = False) -> None:
         """UIを初期化する。"""
-        self.universe = universe
         self.show_generation_counter: bool = show_generation_counter
         self.event: Event = Event()
 
-    def render(self, generation: int) -> str:
+    def render(self, generation: int, universe_snapshot: UniverseSnapshot) -> None:
         """
         Universeの状態を描画する。
 
         :param generation: 現在の世代数
         :type generation: int
-        :return: 描画した状態の文字列
-        :rtype: str
+        :param universe_snapshot: Universeのスナップショット
+        :type universe_snapshot: UniverseSnapshot
         """
         raise NotImplementedError
 
     def poll_key(self) -> None:
         """キー入力を取得する。"""
-        raise NotImplementedError
-
-    def format_board(self) -> str:
-        """Boardの状態を描画するための状態を生成する。"""
         raise NotImplementedError
 
     def finalize(self) -> None:
@@ -247,36 +241,60 @@ class BaseUI:
 class CursesUI(BaseUI):
     """cursesを使用したUIクラス"""
 
-    def __init__(self, universe: Universe,
-                 show_generation_counter: bool = False) -> None:
+    def __init__(self, show_generation_counter: bool = False) -> None:
         """
         CursesUIを初期化する。
 
-        :param universe: 描画するUniverse
-        :type universe: Universe
         :param show_generation_counter: 世代カウンターを表示するかどうか
         :type show_generation_counter: bool
         """
-        super().__init__(universe, show_generation_counter)
+        super().__init__(show_generation_counter)
         self.stdscr: curses.window = curses.initscr()
         curses.noecho()
         curses.cbreak()
         self.stdscr.keypad(True)
         self.stdscr.nodelay(True)
 
-    def render(self, generation: int) -> str:
+    def render(self, generation: int, universe_snapshot: UniverseSnapshot) -> None:
         """
         Universeの状態を描画する。
         show_generation_counterがTrueであれば、世代カウンターを表示する。
+
+        :param generation: 現在の世代数
+        :type generation: int
+        :param universe_snapshot: Universeのスナップショット
+        :type universe_snapshot: UniverseSnapshot
         """
-        y = 0  # 描画開始位置
-        if self.show_generation_counter:
-            self.stdscr.addstr(0, 0, f"Generation: {generation}\n")
-            y = 1
-        state: str = self.format_board()
-        self.stdscr.addstr(y, 0, state)
+        y = self._draw_header(generation)
+        self._draw_board(y, universe_snapshot)
         self.stdscr.refresh()
-        return state
+
+    def _draw_header(self, generation: int) -> int:
+        """
+        ヘッダーを描画する。
+
+        :param generation: 現在の世代数
+        :type generation: int
+        :return: 描画開始位置
+        :rtype: int
+        """
+        y: int = 0
+        if self.show_generation_counter:
+            self.stdscr.addstr(y, 0, f"Generation: {generation}\n")
+            y += 1
+        return y
+
+    def _draw_board(self, y: int, universe_snapshot: UniverseSnapshot) -> None:
+        """
+        Boardの状態を描画する。
+
+        :param y: 描画開始位置
+        :type y: int
+        :param universe_snapshot: Universeのスナップショット
+        :type universe_snapshot: UniverseSnapshot
+        """
+        state: str = self._format_board(universe_snapshot)
+        self.stdscr.addstr(y, 0, state)
 
     def poll_key(self) -> None:
         """キー入力をポーリングする。"""
@@ -291,7 +309,7 @@ class CursesUI(BaseUI):
         elif pressed_key == ord("q"):  # press `q`
             self.event.quit = True
 
-    def format_board(self) -> str:
+    def _format_board(self, universe_snapshot: UniverseSnapshot) -> str:
         """
         Universeの状態を描画するための文字列を生成する。
         生きているセルは"0"、死んでいるセルは"."で表現する。
@@ -300,8 +318,7 @@ class CursesUI(BaseUI):
         :rtype: str
         """
         v: list[str] = []
-        snapshot = self.universe.get_snapshot()
-        for row in snapshot.rows:
+        for row in universe_snapshot.rows:
             for is_alive in row:
                 v.append("0" if is_alive else ".")
                 v.append(" ")
@@ -336,8 +353,8 @@ class Controller:
         self.generation: int = 0
 
         # 進化状態の比較用
-        self.prev_state: str = ""
-        self.curr_state: str = ""
+        self.prev_state: UniverseSnapshot | None = None
+        self.curr_state: UniverseSnapshot | None = None
 
         # 描画スピードの調整用
         self.slowest_time_delay: float = 1.0
@@ -351,7 +368,8 @@ class Controller:
             self.toggle_random_cell_if_requested()
 
             self.prev_state = self.curr_state
-            self.curr_state = self.ui.render(self.generation)
+            self.curr_state = self.universe.get_snapshot()
+            self.ui.render(self.generation, self.curr_state)
 
             if self.is_stable():
                 break
@@ -433,7 +451,7 @@ def main(count: int) -> None:
 
     curses_ui = None
     try:
-        curses_ui = CursesUI(universe, show_generation_counter=True)
+        curses_ui = CursesUI(show_generation_counter=True)
         controller = Controller(universe, curses_ui)
         controller.run()
     finally:
