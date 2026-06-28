@@ -124,7 +124,7 @@ class TestUniverse:
         universe.step()
         assert dump_universe(universe) == first_pattern
 
-    def test_cell_contorol(self) -> None:
+    def test_cell_control(self) -> None:
         """セルの制御テスト"""
         pattern = [
             [False, False, False, False],
@@ -200,10 +200,10 @@ class TestController:
     def test_toggle_random_cell_if_requested(self) -> None:
         """ランダムセルの切り替えテスト"""
         ui = BaseUI()
-        universe = Universe()
-        controller = Controller(universe, ui)
 
         # グリッド生成前なら何もしない
+        universe = Universe()
+        controller = Controller(universe, ui)
         ui.event.toggle_random_cell = True
         snapshot = universe.get_snapshot()
         controller.toggle_random_cell_if_requested()
@@ -213,7 +213,9 @@ class TestController:
         controller.toggle_random_cell_if_requested()
         assert universe.get_snapshot() == snapshot
 
-        # グリッド生成
+        # グリッド生成（前段で空行を追加しているため、ここからは新しいUniverseを使う）
+        universe = Universe()
+        controller = Controller(universe, ui)
         pattern = build_random_pattern(5)
         universe.build_grid(pattern)
 
