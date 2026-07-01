@@ -2,6 +2,10 @@ FROM python:3.14
 
 RUN apt update -y
 
+# Install zsh, vim, and lv
+RUN apt install -y zsh vim lv
+
+# Install GitHub CLI
 RUN (type -p wget >/dev/null || (apt update -y && apt install wget -y)) \
     && mkdir -p -m 755 /etc/apt/keyrings \
     && out=$(mktemp) && wget -nv -O$out https://cli.github.com/packages/githubcli-archive-keyring.gpg \
@@ -12,5 +16,6 @@ RUN (type -p wget >/dev/null || (apt update -y && apt install wget -y)) \
     && apt update -y \
     && apt install gh -y
 
+# Install npm and Codex
 RUN apt install -y npm
 RUN npm install -g @openai/codex
