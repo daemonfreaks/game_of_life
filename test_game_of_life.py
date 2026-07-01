@@ -2,6 +2,10 @@
 An unit test module of game_of_life.py
 """
 
+import unittest.mock
+
+from pytest_mock import MockerFixture
+
 from game_of_life import BaseUI, Controller, LifeCell, Universe, build_random_pattern
 
 
@@ -229,3 +233,62 @@ class TestController:
         ui.event.toggle_random_cell = True
         controller.toggle_random_cell_if_requested()
         assert universe.get_snapshot() != snapshot
+
+    def test_run_for_is_stable(self, mocker: MockerFixture) -> None:
+        """
+        Controllerのrunメソッドのテスト
+
+        - 進化の停滞で止まること
+        """
+        ui = BaseUI()
+        ui_poll_key_mock: unittest.mock.MagicMock = mocker.patch.object(ui, "poll_key")
+        ui_render_mock: unittest.mock.MagicMock = mocker.patch.object(ui, "render")
+
+        universe = Universe()
+        pattern = [
+            [False, False, False, False],
+            [False, True, True, False],
+            [False, True, True, False],
+            [False, False, False, False],
+        ] # ブロックなので安定状態になる
+        universe.build_grid(pattern)
+
+        controller = Controller(universe, ui)
+        wait_for_next_frame_mock: unittest.mock.MagicMock = mocker.patch.object(
+            controller, "wait_for_next_frame")
+        controller.run()
+
+        assert ui_poll_key_mock.call_count == 2
+        assert ui_render_mock.call_count == 2
+        assert wait_for_next_frame_mock.call_count == 1
+        assert controller.generation == 1
+
+    def test_run_for_quit_requested(self, mocker: MockerFixture) -> None:
+        """
+        Controllerのrunメソッドのテスト
+
+        - 終了要求で止まること
+        """
+        ui = BaseUI()
+        ui_poll_key_mock: unittest.mock.MagicMock = mocker.patch.object(ui, "poll_key")
+        ui_render_mock: unittest.mock.MagicMock = mocker.patch.object(ui, "render")
+
+        universe = Universe()
+        pattern = [
+            [False, False, False, False],
+            [False, False, True, False],
+            [False, True, False, False],
+            [False, False, False, False],
+        ]
+        universe.build_grid(pattern)
+
+        controller = Controller(universe, ui)
+        wait_for_next_frame_mock: unittest.mock.MagicMock = mocker.patch.object(
+            controller, "wait_for_next_frame")
+        ui.event.quit = True
+        controller.run()
+
+        assert ui_poll_key_mock.call_count == 1
+        assert ui_render_mock.call_count == 1
+        assert wait_for_next_frame_mock.call_count == 0
+        assert controller.generation == 0
