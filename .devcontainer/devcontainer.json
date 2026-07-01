@@ -3,15 +3,26 @@
   "build": {
     "dockerfile": "Dockerfile"
   },
-  "postCreateCommand": "python -m pip install --upgrade pip && python -m pip install --group dev",
+
+  // ホストの .zshrc をコンテナの .host_zshrc にマウント
+  "mounts": [
+    "source=${localEnv:HOME}/.zshrc,target=/root/.host_zshrc,type=bind,readonly"
+  ],
+
+  "containerEnv": {"SHELL": "/bin/zsh"},
+  "postCreateCommand": "/bin/bash .devcontainer/postCreateCommand.sh",
 
   "customizations": {
     "vscode":{
       "extensions": [
         "ms-python.python",
+        "ms-python.debugpy",
+        "ms-python.black-formatter",
+        "ms-python.mypy-type-checker",
         "ms-python.vscode-pylance",
-        "ms-azuretools.vscode-containers",
+        "ms-python.vscode-python-envs",
         "github.vscode-github-actions",
+        "github.vscode-pull-request-github",
         "openai.chatgpt"
       ]
     }
