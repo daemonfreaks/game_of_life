@@ -10,6 +10,7 @@ license = { file = "LICENSE" }
 dev = [
     "pytest",
     "pytest-cov",
+    "pytest-mock",
     "ruff",
     "mypy",
 ]
