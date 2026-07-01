@@ -234,7 +234,7 @@ class TestController:
         controller.toggle_random_cell_if_requested()
         assert universe.get_snapshot() != snapshot
 
-    def test_run_for_is_stable(self, mocker: MockerFixture) -> None:
+    def test_run_stops_when_stable(self, mocker: MockerFixture) -> None:
         """
         Controllerのrunメソッドのテスト
 
@@ -250,7 +250,7 @@ class TestController:
             [False, True, True, False],
             [False, True, True, False],
             [False, False, False, False],
-        ] # ブロックなので安定状態になる
+        ]  # ブロックなので安定状態になる
         universe.build_grid(pattern)
 
         controller = Controller(universe, ui)
@@ -263,7 +263,7 @@ class TestController:
         assert wait_for_next_frame_mock.call_count == 1
         assert controller.generation == 1
 
-    def test_run_for_quit_requested(self, mocker: MockerFixture) -> None:
+    def test_run_stops_whent_quit_requested(self, mocker: MockerFixture) -> None:
         """
         Controllerのrunメソッドのテスト
 
