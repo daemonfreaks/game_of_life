@@ -1,9 +1,7 @@
 FROM python:3.14
 
-RUN apt update -y
-
 # Install zsh, vim, and lv
-RUN apt install -y zsh vim lv
+RUN apt update -y && apt install -y zsh vim lv
 
 # Install GitHub CLI
 RUN (type -p wget >/dev/null || (apt update -y && apt install wget -y)) \
@@ -17,5 +15,5 @@ RUN (type -p wget >/dev/null || (apt update -y && apt install wget -y)) \
     && apt install gh -y
 
 # Install npm and Codex
-RUN apt install -y npm
+RUN apt update -y && apt install -y npm
 RUN npm install -g @openai/codex
