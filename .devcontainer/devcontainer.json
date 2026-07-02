@@ -4,9 +4,9 @@
     "dockerfile": "Dockerfile"
   },
 
-  // ホストの .zshrc をコンテナの .host_zshrc にマウント
+  // ホストの $HOME をコンテナの /host にマウント
   "mounts": [
-    "source=${localEnv:HOME}/.zshrc,target=/root/.host_zshrc,type=bind,readonly"
+    "source=${localEnv:HOME},target=/host,type=bind,readonly"
   ],
 
   "containerEnv": {"SHELL": "/bin/zsh"},
