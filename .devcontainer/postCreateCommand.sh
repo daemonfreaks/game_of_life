@@ -1,6 +1,10 @@
 #!/bin/bash
 
-python -m pip install --upgrade pip 
+set -euo pipefail
+
+python -m pip install --upgrade pip
 python -m pip install --group dev
 
-ln -sf $HOME/.host_zshrc $HOME/.zshrc && source $HOME/.zshrc
+if [[ -f /host/.zshrc ]]; then
+  ln -sf /host/.zshrc "$HOME/.zshrc"
+fi

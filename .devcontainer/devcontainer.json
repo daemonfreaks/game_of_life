@@ -4,9 +4,9 @@
     "dockerfile": "Dockerfile"
   },
 
-  // ホストの .zshrc をコンテナの .host_zshrc にマウント
+  // ホストの $HOME をコンテナの /host にマウント
   "mounts": [
-    "source=${localEnv:HOME}/.zshrc,target=/root/.host_zshrc,type=bind,readonly"
+    "source=${localEnv:HOME},target=/host,type=bind,readonly"
   ],
 
   "containerEnv": {"SHELL": "/bin/zsh"},
@@ -17,7 +17,6 @@
       "extensions": [
         "ms-python.python",
         "ms-python.debugpy",
-        "ms-python.black-formatter",
         "ms-python.mypy-type-checker",
         "ms-python.vscode-pylance",
         "ms-python.vscode-python-envs",
